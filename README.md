@@ -73,7 +73,7 @@ Now for our third question we will have to look a bit more carefully at our nmap
 
 "How many TCP ports are open?"
 
-TCP is the transport protocol that is used for the port numbers signified. TCP sets up a connection between two devices and constantly checks if data arrives in the right order, it is reliable but has more overhead and is much slower than UDP. UDP is its counterpart and sends data without setting up a connection or confirming delivery, it is much faster than TCP but terribly inefficient as packets could be lost or arrive out of order using this transport protocol. It's important to know the difference as a standard but it is not vital to complete this room I just thought I would explain what it is before we continue.
+TCP is the transport protocol that is used for the port numbers signified. TCP sets up a connection between two devices and constantly checks if data arrives in the right order and is required to do so, it is reliable but has more overhead and is much slower than UDP. UDP is its counterpart and sends data without setting up a connection or confirming delivery, it is much faster than TCP but terribly inefficient as packets could be lost or arrive out of order using this transport protocol. It's important to know the difference as a standard but it is not vital to complete this room I just thought I would explain what it is before we continue.
 
 So with that being said, let's look back at the nmap scan we had conducted earlier in this room:
 
@@ -83,7 +83,7 @@ As you can see, the port numbers are listed as follows:
 
 "PORT/TRANSPORT_PROTOCOL"
 
-This is the standard for how nmap marks down each port number. We found seven ports and every single one's transport protocol is TCP, meaning the answer to the question stated would be 7.
+This is the standard for how nmap marks down each port number. We found seven ports and every single ones transport protocol is TCP, meaning the answer to the question stated would be 7.
 
 Port Service Version Enumeration
 ---------------------------------
@@ -205,13 +205,156 @@ You can also download the SecLists Github repo which comes with this wordlist an
 
 https://github.com/danielmiessler/SecLists
 
-```ftp://```:This tells hydra what service you are attempting to target, without this flag of sorts hydra would be lost and would refuse to brute force at all.
+```ftp://```:This tells hydra what service you are attempting to target, without this flag hydra would be lost and would refuse to brute force at all.
 
 ```MACHINE_IP```:This is just our target machine's IP again. This section tells Hydra what IP address to target when brute forcing our username file.
 
 ```:10121```:This part is essential as it is the port number we are attempting to brute force, since FTP usually runs on port 21 this is necessary to successfully brute force our usernames. Without it Hydra would attempt to use port 21 to brute force our machine and would hit a brick wall in a sense.
 
 ```-t 4```:This simply tells Hydra to run this many tasks in parallel with each other. Depending on how strong your system is you can ramp this up to over 16 tasks at once with ```-t 16``` although that would take a monster to run. I like to use 4 to be conservative and as it can run on most systems old and new.
+
+Make sure to remember how to use hydra and what each flag in the hydra tool does as it is essential to a ton of CTFs and rooms present on this site and is useful in general to brute force weak passwords.Anyways now that we ran hydra and let the command run, you should see something like this in your terminal if you did it correctly:
+
+
+<img width="953" height="448" alt="HYDRAOBFSC" src="https://github.com/user-attachments/assets/b65fe7f7-fba9-4b5d-b3dd-c14e78b728ab" />
+
+As we can see from the image above, hydra has successfully brute forced the usernames from our user file using rockyou.txt and came up with two passwords which it found. Again I cannot show these passwords but we will use them for the next step in the process.
+
+Accessing the FTP Server
+------------------------
+
+Now that we are past the hard part this part is extremely easy. All we need to do now is login to both eddie and quinn and see which of these accounts hold our secret flag file. To login to the FTP server, we can use the command:
+
+```ftp MACHINE_IP 10121```
+
+If you do not know what this command does or why it works the way it works, the string goes as follows:
+
+```ftp```:This is simply telling the terminal to login to a FTP server
+
+```MACHINE_IP```:This is the target machine's IP which hosts the FTP server.
+
+```10121```:This is the port number in which we are connecting to on the target machine's servers in order to access the FTP server. Remember the FTP server on this machine is not on the standard port for FTP port 21 so this option is essential to accessing it. Without this option the server will refuse to connect because it cannot find the server.
+
+Now that we have input the command and executed it the process should be pretty straightforward, let's input eddie to start and then input eddie's password. When you have successfully logged into their account your terminal should look like this:
+
+<img width="906" height="386" alt="Screenshot From 2026-10-19 19-57-30" src="https://github.com/user-attachments/assets/b6e21f93-071d-49b5-90ff-316d86ca28b4" />
+
+Now that we are in eddie's FTP server we can finally start searching for the flag file. But first make sure to turn on passive mode via the command ```passive``` in the FTP server. This will alleviate any problems with inputting commands in the server such as freeze ups because the server is most likely if not definitely behind a firewall as being in active mode while inputting commands behind a firewall will cause system choke holds. Passive mode will stop this in most scenarios. A link to an article explaining why this works and that explains it way better than I do is linked here:
+
+https://winscp.net/eng/docs/ftp_modes
+
+Anyways after going into passive mode we can finally start inputting some commands to find this file. Let us start by inputting the following command in the starting directory:
+
+```ls -a```
+
+I should not have to explain what this command does but if you do not know:
+
+```ls```:Lists the current files present in the directory you are in.
+
+```-a```:This flag lists hidden files in the directory you are currently in, you should always use this command on CTFs like this as the flag file could be anywhere it could even be hidden. It's not good to take chances on things like that for a flag so simple.
+
+After you input the said command to list all files hidden and not, your terminal should look like this:
+
+<img width="921" height="448" alt="Screenshot From 2026-10-19 20-11-15" src="https://github.com/user-attachments/assets/6206b72b-ba74-4322-8d9e-059218822f5e" />
+
+As we can see, eddie does not have the flag file we are after, which means the next best alternative is quinn. Let's do the same process for quinn and see what our research shows. If you need to recall what commands to put in simply scroll back up and read the process we used for eddie as it is the exact same minus the username and password we used. After we input quinn's username and password and list the files hidden and not in their directory we can see the following:
+
+<img width="931" height="775" alt="Screenshot From 2026-10-19 20-14-30" src="https://github.com/user-attachments/assets/4c9ab616-741c-4b7b-a2e3-22bb99e042d9" />
+
+Quinn has our flag file in their directory!! All we need to do now is transfer the file from the FTP server onto our machine in order to read it. We do this instead of using ```cat```to read the file as ```cat```is not available on FTP systems. We can transport the file using the command:
+
+```get ftp_flag.txt```
+
+This command is pretty self explanatory but for old times sake this is what each piece of this command does:
+
+```get```:This tells the FTP server you want to retrieve a file and transport it to your system.
+
+```ftp_flag.txt```:This is the file we want transferred to our system. Which in this case would be our flag file!!
+
+Now that the flag file is transported onto your system or the AttackBox you are attacking this machine from we need to see where the file ended up. Majority of the time if not all the time, I haven't seen it a time it hasn't been here so don't quote me on that lol, it will be in your home directory. Simply exit the FTP server using "ctrl+d" and then reset your terminal with the ```reset``` command so you have a fresh terminal to execute commands from, not necessary but to get rid of all the stuff we just done and to declutter I personally enjoy doing this just so I have a clearer terminal space. Now since we resetted our terminal it should automatically be in the home directory in which our flag file should reside. We can check this by inputting the command:
+
+```ls | grep ftp_flag.txt```
+
+Again this command is structured in a certain way so only our flag file is allowed to show up when we input the ``ls``command. Each part goes as follows:
+
+``ls``:Again this just lists the current files in the directory you are currently in.
+
+```|```: This is called a pipe and is extremely useful if you ever want to learn Linux more in depth, it essentially "pipes" or sends the output of one command to another, so in our scenario the pipe sends the output of ```ls``` to the ```grep``` command.
+
+```grep```:grep is another insanely useful command in the Linux terminal as it searches for whatever you put after it in the file, directory, or wherever you execute it. It is extremely useful when attempting to find a single piece of information in a text file for instance when the said text file is thousands of lines long, it simply makes the searching process faster as an user.
+
+```ftp_flag.txt```:This should be pretty self explanatory, we are essentially just telling the ```grep```command to search for this specific wordage in the directory we are currently in.
+
+After we input this command and check the output, if you did the prior steps correct the terminal should look like as follows:
+
+<img width="931" height="296" alt="Screenshot From 2026-10-19 20-33-27" src="https://github.com/user-attachments/assets/d7b900a7-6e2b-4e25-aeb9-27e234510655" />
+
+Perfect the file is now in our home directory! Now all we need to do is ```cat```the file and read its contents. After we execute the cat command on the flag file the flag for this command will be in our terminal! It should look as follows:
+
+<img width="931" height="425" alt="quinnobfsc" src="https://github.com/user-attachments/assets/a7f47fc0-0fbb-44e9-be5a-d1b11701982a" />
+
+Now onto the next question! (That was a long one I know lol.)
+
+Stealth nmap Scanning
+---------------------
+
+This next question is much MUCH simpler and just warrants us to complete a quick nmap challenge in order to acquire the flag via our browser. The question goes as follows:
+
+"Browsing to http://MACHINE_IP:8081 displays a small challenge that will give you a flag once you solve it. What is the flag?"
+
+Following the questions guide and navigating to the website in the question, we will be presented with the following:
+
+<img width="948" height="1156" alt="nmapscanssobfscucate" src="https://github.com/user-attachments/assets/9e7e2ef0-fb78-4d09-9f47-53f6cd27db3a" />
+
+For this challenge we will have to use nmap to scan the target machine and do it as covertly as possible in order to not be detected by the system's internal IDS(Intrustion Detection Software). To do this we will have to use the stealthiest nmap scanning options in our terminal in order to pass the IDS present on the system. This is an extremely easy process and I will explain what each part does in depth so you can fully grasp what the command does. It goes as follows:
+
+```sudo nmap -sN MACHINE_IP```
+
+Again as stated prior, this is what each part of the command does:
+
+```sudo```:This tells the terminal to execute this command via the root user. This is essential because we are using the flag ```-sN```which can only be executed as the root user.
+
+```nmap```:This tells the terminal to use the tool nmap.
+
+```-sN```:This flag tells nmap to perform a scan called a "TCP Null Scan". What it essentially does is sends TCP packets with no flags set and then uses the response from the ports to infer the port's status. For example when we input this flag into our command all the ports will be shown as "open|filtered", which means that nmap cannot tell that the port is open or filtered, although we already know these ports are open. The reason we are using it is to get past the IDS. A link to a general guide to nmap port scanning can be found here if you want to do further research on the subject which I heavily recommend as nmap is an extremely useful tool for port enumeration a skill you will need to know for these kinds of rooms and in general for cybersecurity roles:
+
+https://nmap.org/book/port-scanning-tutorial.html
+
+
+```MACHINE_IP```:Again this is just the target machine's IP, pretty self explanatory.
+
+Make sure to reset the packet count on the site and then execute the command, you should see the browser adjust the chance of being scanned to an extremely low level and after that the site will automatically give you the flag! In case you want to see a visual of what it looks like when you have successfully got around the IDS this is what it should look like in your browser:
+
+<img width="948" height="1156" alt="obfwebbrowser" src="https://github.com/user-attachments/assets/f0366349-af5e-4892-ae78-94199e150081" />
+
+Thank You
+---------
+
+We have officially acquired the last questions flag and we are done with this room! Thank you so much for sitting through this guide and following it step by step as even through a guide learning step by step is way better than looking the answers up. Any advice on what I can do different or how I can improve my write-ups is gladly accepted as I want to create the best write-ups I can so everybody can learn this material regardless of prior experience. Again thank you for sitting through this guide and have a great day!
+
+
+<img width="554" height="450" alt="arnold" src="https://github.com/user-attachments/assets/717aa7ba-963a-4522-866e-fc3ae0d6c2b4" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

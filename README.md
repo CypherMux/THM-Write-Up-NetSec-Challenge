@@ -327,6 +327,28 @@ Make sure to reset the packet count on the site and then execute the command, yo
 
 <img width="948" height="1156" alt="obfwebbrowser" src="https://github.com/user-attachments/assets/f0366349-af5e-4892-ae78-94199e150081" />
 
+What we learnt
+-------------
+
+The importance of doing a full port scan: Scanning all ports via adding the ```-p-``` flag in our nmap command was essential in discovering the rooms hidden services on non-standard ports, such as the hidden FTP server we found.
+
+Protocol Fundamentals: We learnt the importance of understanding the difference between UDP and TCP and why using TCP for important services where reliability matters more than speed is so essential.
+
+Nuances in the FTP protocol: We learned why passive mode is necessary when interacting with the majority of FTP servers modern day. Active connection causes freeze ups due to the firewall guarding the server while passive mode enables us to transfer our commands successfully and extract the data we need.
+
+IDS Evasion: We learnt how to successfully evade an IDS that is tracking our network scans by using the TCP Null scan option in nmap. Sending packets with no flags set can trick the IDS into ignoring our scan outright.
+
+Remediation
+-----------
+
+It is great knowing how to attack a system but is even better if you understand how to defend it as well. The ways to defend the server in this room include the following:
+
+Securing the FTP server: The FTP server in this room was running on a non-standard port and was extremely vulnerable to a brute force attack using a common passwords list like in this case "rockyou.txt". The protocol should be migrated over to SFTP and much stronger password policies should be put in place, or even better, key-based authentication via something like a Yubi key for instance.
+
+Harden the IDS/Firewall: The IDS in this system was easily bypassed by using a TCP Null scan. To remediate this, the firewall should be reconfigured to drop malformed TCP packets before they reach the IDS. The IDS should also be set to be alerted for stealth scanning techniques commonly used, such as the TCP Null scan we used.
+
+Use the principle of least privilege: The FTP server in this room allowed us to download the flag file and in fact any file we wanted. Access controls for such an action should be reviewed to be certain that no anonymous or low level users are able to do such a thing to sensitive files.
+
 Thank You
 ---------
 
